@@ -2,6 +2,7 @@ import sys
 import pygame as pg
 import time as t
 import math as m
+import os
 
 class Building(object):
     def __init__(self, base_cost, base_cps, order, name):
@@ -90,6 +91,38 @@ class Sanchez(Building):
     def __init__(self, cost = 1000000000000, cps = 10000000, order = 450, name = "Portal"):
         super().__init__(cost, cps, order, name)
 
+
+class Upgrade(pg.sprite.Sprite):
+    def __init__(self, price, building, multiplier, level=0, pos=(540,360)):
+        pg.sprite.Sprite.__init__(self)
+        self.price = price
+        self.building = building
+        self.picture = pg.image.load(os.path.join("ATCSIndProj","sprites", "cursor", "c1.png"))
+        self.picture.convert_alpha()
+        self.image = self.picture
+        self.rect = self.image.get_rect(center=pos)
+        self.multiplier = multiplier
+        self.level = level
+        self.is_max = False
+    
+    def get_price(self):
+        return self.price
+    
+    def buy(self):
+        if self.level < 1:
+            self.price *= 5
+        if self.level < 2:
+            self.price *= 10
+        if self.level < 5:
+            self.price *= 100
+        if self.level < 9:
+            self.price *= 1000
+        if self.price < 14:
+            self.price *= 10000
+        else:
+            self.is_max = True
+        self.level += 1
+
 """
 def num_format(num, round_to=1):
     magnitude = 0
@@ -137,6 +170,10 @@ def main():
     alchemists = PEChem()
     portals = Sanchez()
     buildings = [cursors, grandmas, farms, mines, factories, banks, temples, towers, shipments, alchemists, portals]
+
+    pics = pg.sprite.Group()
+    pic = Upgrade(2,5,2)
+    pics.add(pic)
     
     time_start = t.time()
 
@@ -183,6 +220,8 @@ def main():
         pg.draw.rect(screen, (0, 0, 255), buildbox)
         TOTAL_FONT.render_to(screen, (20, 15), ("{:.0f}".format(COOKIES) + " Cookies"), (255,255,255))
         CPS_FONT.render_to(screen, (20, 40), (str("{:.1f}".format(CPS)) + " Cookies Per Second"), (255,255,255))
+
+        pics.draw(screen)
 
         y_shift = 10
         for building in buildings:

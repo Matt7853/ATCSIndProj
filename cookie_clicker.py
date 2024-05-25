@@ -4,7 +4,8 @@ import time as t
 import math as m
 import os
 
-class Building(object):
+
+class Building(object): #Building + subclasses
     def __init__(self, base_cost, base_cps, order, name):
         self.name = name
         self.cost = base_cost
@@ -93,17 +94,20 @@ class Sanchez(Building):
 
 
 class Upgrade(pg.sprite.Sprite):
-    def __init__(self, price, building, multiplier, level=0, pos=(540,360)):
+    def __init__(self, price, building, multiplier, level=0, pos=(40,360)):
         pg.sprite.Sprite.__init__(self)
-        self.price = price
-        self.building = building
-        self.picture = pg.image.load(os.path.join("ATCSIndProj","sprites", "cursor", "c1.png"))
+        self.picture = pg.image.load(os.path.join("ATCSIndProj","sprites", "cursor", "c"+str(level+1)+".png"))
         self.picture.convert_alpha()
         self.image = self.picture
         self.rect = self.image.get_rect(center=pos)
+        self.nextim = pg.image.load(os.path.join("ATCSIndProj","sprites", "cursor", "c"+str(level+2)+".png"))
+        self.price = price
+        self.building = building
         self.multiplier = multiplier
         self.level = level
         self.is_max = False
+        self.box = pg.Rect(self.rect)
+        
     
     def get_price(self):
         return self.price
@@ -111,17 +115,29 @@ class Upgrade(pg.sprite.Sprite):
     def buy(self):
         if self.level < 1:
             self.price *= 5
-        if self.level < 2:
+        elif self.level < 2:
             self.price *= 10
-        if self.level < 5:
+        elif self.level < 5:
             self.price *= 100
-        if self.level < 9:
+        elif self.level < 9:
             self.price *= 1000
-        if self.price < 14:
+        elif self.price < 14:
             self.price *= 10000
         else:
             self.is_max = True
+            return
+            
         self.level += 1
+        self.image = self.nextim
+    
+    def get_box(self):
+        return self.box
+    
+    def get_mult(self):
+        return self.multiplier
+    
+    def get_level(self):
+        return self.level
 
 """
 def num_format(num, round_to=1):
@@ -155,6 +171,7 @@ def main():
     COOKIES = 0
     global CPS
     CPS = 0
+    onclick = 1
 
     done = False
 
@@ -172,7 +189,7 @@ def main():
     buildings = [cursors, grandmas, farms, mines, factories, banks, temples, towers, shipments, alchemists, portals]
 
     pics = pg.sprite.Group()
-    pic = Upgrade(2,5,2)
+    pic = Upgrade(100,'cursor',2)
     pics.add(pic)
     
     time_start = t.time()
@@ -188,16 +205,22 @@ def main():
                 if event.button == 1:  # Left mouse button.
                     # Check if the rect collides with the mouse pos.
                     if dev_cookup.collidepoint(event.pos):
-                        COOKIES += 100000
+                        COOKIES += 1000000000
                     if dev_cpup.collidepoint(event.pos):
-                        CPS += 100
+                        CPS += 100000
                     if dev_cookdown.collidepoint(event.pos):
-                        COOKIES -= 100000
+                        COOKIES -= 1000000000
                     if dev_cpdown.collidepoint(event.pos):
-                        CPS -= 100
+                        CPS -= 100000
+
+                    if pic.get_box().collidepoint(event.pos):
+                        if COOKIES >= pic.get_price():
+                            COOKIES -= pic.get_price()
+                            onclick *= pic.get_mult()
+                            pic.buy()
 
                     if cookie.collidepoint(event.pos):
-                        COOKIES += 1
+                        COOKIES += onclick
                     elif buildbox.collidepoint(event.pos):
                         for building in buildings:
                             if building.get_box().collidepoint(event.pos):
@@ -215,6 +238,9 @@ def main():
         pg.draw.rect(screen, (255, 0, 0), dev_cookdown)
         pg.draw.rect(screen, (255, 0, 0), dev_cpdown)
 
+        pg.draw.rect(screen, (30,30,30), pic.get_box())
+        BLD_FONT.render_to(screen, (24, 385), (str(pic.get_price())), (255,255,255))
+        BLD_FONT.render_to(screen, (68, 355), ("lvl: "+str(pic.get_level())), (255,255,255))
 
         pg.draw.rect(screen, (100, 200, 70), cookie)
         pg.draw.rect(screen, (0, 0, 255), buildbox)
